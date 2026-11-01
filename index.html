@@ -1,0 +1,1750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Understanding Depth-First Search (DFS) Through State Space</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #27354a;
+      --surface-border: #334155;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-indigo: #818cf8;
+      --accent-green: #34d399;
+      --accent-amber: #fbbf24;
+      --accent-rose: #f43f5e;
+      --accent-purple: #c084fc;
+
+      --cell-empty: #1e293b;
+      --cell-wall: #090d16;
+      --cell-current: #fbbf24;
+      --cell-stack: #818cf8;
+      --cell-explored: #334155;
+      --cell-deadend: #f43f5e;
+      --cell-goal: #34d399;
+      --cell-path: #10b981;
+
+      --transition-speed: 0.25s;
+      --font-mono: 'Fira Code', monospace;
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    [data-theme="light"] {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-hover: #f1f5f9;
+      --surface-border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --accent-blue: #0284c7;
+      --accent-indigo: #6366f1;
+      --accent-green: #10b981;
+      --accent-amber: #d97706;
+      --accent-rose: #e11d48;
+      --accent-purple: #9333ea;
+
+      --cell-empty: #ffffff;
+      --cell-wall: #cbd5e1;
+      --cell-current: #fef08a;
+      --cell-stack: #c7d2fe;
+      --cell-explored: #e2e8f0;
+      --cell-deadend: #fecdd3;
+      --cell-goal: #a7f3d0;
+      --cell-path: #6ee7b7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: var(--bg);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding: 24px 16px 60px 16px;
+      transition: background-color var(--transition-speed), color var(--transition-speed);
+      min-width: 320px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      border-bottom: 1px solid var(--surface-border);
+      padding-bottom: 16px;
+    }
+
+    .header-title h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .header-title p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 4px;
+    }
+
+    .theme-toggle-btn {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition-speed);
+    }
+    .theme-toggle-btn:hover {
+      background: var(--surface-hover);
+    }
+
+    /* CARD STYLING */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--accent-blue);
+    }
+
+    /* VOCABULARY SECTION */
+    .vocab-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+    }
+
+    .vocab-item {
+      background: rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.88rem;
+    }
+
+    [data-theme="dark"] .vocab-item {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .vocab-badge {
+      display: inline-block;
+      font-weight: 700;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+      color: var(--accent-indigo);
+    }
+
+    .vocab-def {
+      color: var(--text-main);
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+
+    .vocab-example {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      border-top: 1px dashed var(--surface-border);
+      padding-top: 5px;
+      font-family: var(--font-mono);
+    }
+
+    /* MAIN INTERACTIVE WORKSPACE */
+    .workspace-grid {
+      display: grid;
+      grid-template-columns: 340px 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 960px) {
+      .workspace-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* MAZE CONTAINER */
+    .maze-column {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .maze-wrapper {
+      position: relative;
+      background: var(--surface);
+      border: 2px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      user-select: none;
+    }
+
+    .grid-board {
+      display: grid;
+      grid-template-columns: repeat(6, 44px);
+      grid-template-rows: repeat(6, 44px);
+      gap: 4px;
+      background: transparent;
+    }
+
+    .cell {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.15s, border-color 0.2s;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .cell.wall {
+      background-color: var(--cell-wall);
+      border-color: rgba(0, 0, 0, 0.3);
+      cursor: not-allowed;
+    }
+
+    .cell.empty {
+      background-color: var(--cell-empty);
+      border-color: var(--surface-border);
+    }
+
+    .cell.explored {
+      background-color: var(--cell-explored);
+      color: var(--text-muted);
+    }
+
+    .cell.stack {
+      background-color: var(--cell-stack);
+      color: #1e1b4b;
+      box-shadow: inset 0 0 0 2px var(--accent-indigo);
+    }
+
+    .cell.current {
+      background-color: var(--cell-current);
+      color: #78350f;
+      transform: scale(1.05);
+      z-index: 2;
+      box-shadow: 0 0 12px rgba(251, 191, 36, 0.8), inset 0 0 0 2px #b45309;
+      animation: pulse-ring 1.8s infinite;
+    }
+
+    @keyframes pulse-ring {
+      0% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.6); }
+      70% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
+    }
+
+    .cell.deadend {
+      background-color: var(--cell-deadend);
+      color: #881337;
+    }
+
+    .cell.goal-found {
+      background-color: var(--cell-goal);
+      color: #064e3b;
+      font-weight: 700;
+    }
+
+    .cell.final-path {
+      background-color: var(--cell-path) !important;
+      color: #064e3b !important;
+      font-weight: 700;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.6);
+    }
+
+    .cell-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      margin-top: 1px;
+    }
+
+    .cell-coord-sub {
+      font-size: 0.55rem;
+      opacity: 0.7;
+    }
+
+    /* HOVER TOOLTIP */
+    .cell-tooltip {
+      position: absolute;
+      bottom: -46px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface);
+      border: 1px solid var(--accent-blue);
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      pointer-events: none;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+      z-index: 20;
+      display: none;
+      font-family: var(--font-mono);
+    }
+
+    /* COLOR LEGEND */
+    .legend-box {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      justify-content: center;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 0.78rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+    }
+
+    .legend-chip {
+      width: 14px;
+      height: 14px;
+      border-radius: 3px;
+      border: 1px solid rgba(0, 0, 0, 0.2);
+    }
+
+    /* RIGHT COLUMN: CONTROLS, NARRATION, TREE & STACK */
+    .details-column {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    /* CONTROLLER PANEL */
+    .controls-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .btn:hover:not(:disabled) {
+      background: var(--surface-hover);
+      border-color: var(--accent-blue);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .btn.primary {
+      background: var(--accent-blue);
+      color: #0f172a;
+      border-color: var(--accent-blue);
+    }
+    .btn.primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+    }
+
+    .speed-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .speed-control input[type="range"] {
+      accent-color: var(--accent-blue);
+      cursor: pointer;
+      width: 90px;
+    }
+
+    /* ORDER BANNER */
+    .order-banner {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 8px;
+      padding: 8px 12px;
+      font-size: 0.82rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: var(--accent-blue);
+    }
+
+    .order-sequence {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      background: var(--surface);
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--surface-border);
+      color: var(--text-main);
+    }
+
+    /* NARRATION LINE */
+    .narration-box {
+      background: var(--surface);
+      border-left: 4px solid var(--accent-amber);
+      border-radius: 0 8px 8px 0;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.4;
+      min-height: 64px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .narration-step-tag {
+      font-size: 0.72rem;
+      font-family: var(--font-mono);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent-amber);
+      font-weight: 700;
+    }
+
+    /* STEP STATE BREAKDOWN */
+    .step-metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .metric-header {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .metric-val {
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .actions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-top: 4px;
+    }
+
+    .action-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.78rem;
+      font-family: var(--font-mono);
+      padding: 3px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.15);
+      border: 1px solid var(--surface-border);
+    }
+
+    [data-theme="dark"] .action-badge {
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .action-badge.strike {
+      text-decoration: line-through;
+      opacity: 0.45;
+      color: var(--text-muted);
+    }
+
+    .action-badge.selected {
+      border-color: var(--accent-amber);
+      background: rgba(251, 191, 36, 0.15);
+      color: var(--accent-amber);
+      font-weight: 700;
+    }
+
+    /* SPLIT VIEW FOR STACK & TREE */
+    .split-structures {
+      display: grid;
+      grid-template-columns: 190px 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 720px) {
+      .split-structures {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .stack-panel {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .stack-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 8px;
+      max-height: 250px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .stack-item {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      background: rgba(129, 140, 248, 0.15);
+      border: 1px solid var(--accent-indigo);
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .stack-item.top {
+      border-color: var(--accent-amber);
+      background: rgba(251, 191, 36, 0.18);
+      font-weight: 700;
+    }
+
+    .stack-top-badge {
+      font-size: 0.65rem;
+      background: var(--accent-amber);
+      color: #000;
+      padding: 1px 4px;
+      border-radius: 3px;
+      font-weight: 700;
+    }
+
+    /* SEARCH TREE CANVAS/SVG */
+    .tree-panel {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .tree-scroll-container {
+      width: 100%;
+      height: 250px;
+      overflow: auto;
+      background: rgba(0, 0, 0, 0.1);
+      border-radius: 6px;
+      border: 1px solid var(--surface-border);
+      position: relative;
+    }
+
+    [data-theme="dark"] .tree-scroll-container {
+      background: #090d16;
+    }
+
+    svg.tree-svg {
+      width: 100%;
+      height: 100%;
+      min-width: 500px;
+      min-height: 240px;
+    }
+
+    /* TREE SVG NODES */
+    .tree-edge {
+      stroke: var(--surface-border);
+      stroke-width: 1.8;
+      stroke-linecap: round;
+      transition: stroke 0.2s;
+    }
+    .tree-edge.active-path {
+      stroke: var(--accent-indigo);
+      stroke-width: 2.2;
+    }
+    .tree-edge.final-path {
+      stroke: var(--accent-green);
+      stroke-width: 3;
+    }
+
+    .tree-node-circle {
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tree-node-text {
+      font-family: var(--font-mono);
+      font-size: 9.5px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+
+    /* CLOSING SUMMARY & COMPARISON */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 16px;
+    }
+
+    @media (max-width: 820px) {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .key-points-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .key-point-item {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 0.9rem;
+    }
+
+    .point-number {
+      background: var(--accent-blue);
+      color: #0f172a;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.78rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .comparison-box {
+      background: rgba(0, 0, 0, 0.1);
+      border: 1px dashed var(--surface-border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .comparison-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--surface-border);
+      padding-bottom: 6px;
+    }
+
+    .comparison-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .compare-tag {
+      font-weight: 600;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+    }
+
+    .compare-value {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- TOP HEADER -->
+  <header>
+    <div class="header-title">
+      <h1>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent-blue);">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+        Depth-First Search (DFS) in AI
+      </h1>
+      <p>Interactive State Space &amp; Search Tree Visualizer</p>
+    </div>
+    <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Theme">
+      <span id="themeIcon">☀️</span> <span id="themeLabel">Light Mode</span>
+    </button>
+  </header>
+
+  <!-- 1. VOCABULARY PANEL (AI COURSE FORMULATION) -->
+  <section class="card" aria-label="AI Vocabulary">
+    <div class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+      Formal AI Formulation: Problem Space Definitions
+    </div>
+    <div class="vocab-grid">
+      <div class="vocab-item">
+        <span class="vocab-badge">State</span>
+        <div class="vocab-def">A specific configuration of the agent in the world.</div>
+        <div class="vocab-example">Maze: Cell coords <code>(r, c)</code></div>
+      </div>
+      <div class="vocab-item">
+        <span class="vocab-badge">Initial State</span>
+        <div class="vocab-def">Where the search process begins.</div>
+        <div class="vocab-example">Start cell <code>S = (0, 0)</code></div>
+      </div>
+      <div class="vocab-item">
+        <span class="vocab-badge">Goal State</span>
+        <div class="vocab-def">The target state satisfying the exit condition.</div>
+        <div class="vocab-example">Exit cell <code>G = (5, 5)</code></div>
+      </div>
+      <div class="vocab-item">
+        <span class="vocab-badge">Actions</span>
+        <div class="vocab-def">Available moves allowed from the current state.</div>
+        <div class="vocab-example"><code>Up, Right, Down, Left</code> (no walls)</div>
+      </div>
+      <div class="vocab-item">
+        <span class="vocab-badge">Transition</span>
+        <div class="vocab-def">Result function: <code>Result(s, a) &rarr; s'</code></div>
+        <div class="vocab-example"><code>(0,0) + Right &rarr; (0,1)</code></div>
+      </div>
+      <div class="vocab-item">
+        <span class="vocab-badge">State Space</span>
+        <div class="vocab-def">All possible states reachable through valid actions.</div>
+        <div class="vocab-example">Graph of reachable maze cells</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. WORKSPACE: MAZE & STEP-THROUGH PLAYER -->
+  <div class="workspace-grid">
+    
+    <!-- LEFT: MAZE & COLOR LEGEND -->
+    <div class="maze-column">
+      <div class="card maze-wrapper">
+        <div id="gridBoard" class="grid-board" role="grid" aria-label="6x6 Maze Grid"></div>
+        <div id="cellTooltip" class="cell-tooltip">Cell info</div>
+      </div>
+
+      <!-- COLOR LEGEND -->
+      <div class="legend-box" aria-label="Color Legend">
+        <div class="legend-item">
+          <div class="legend-chip" style="background:var(--cell-current); border-color:#b45309;"></div>
+          <span>Current</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip" style="background:var(--cell-stack); border-color:var(--accent-indigo);"></div>
+          <span>In Stack</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip" style="background:var(--cell-explored); border-color:var(--surface-border);"></div>
+          <span>Explored</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip" style="background:var(--cell-deadend); border-color:#881337;"></div>
+          <span>Dead End</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip" style="background:var(--cell-goal); border-color:#064e3b;"></div>
+          <span>Goal Found</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-chip" style="background:var(--cell-path); border-color:#064e3b;"></div>
+          <span>Final Path</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: CONTROLLER, NARRATION, METRICS, SEARCH TREE & STACK -->
+    <div class="details-column">
+      
+      <!-- CONTROLS & ACTION ORDER RULE -->
+      <div class="card" style="padding: 14px 18px;">
+        <div class="controls-bar">
+          <div class="btn-group">
+            <button class="btn" id="btnReset" title="Reset to start">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path></svg>
+              Reset
+            </button>
+            <button class="btn" id="btnBack" title="Previous step">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line></svg>
+              Back
+            </button>
+            <button class="btn primary" id="btnNext" title="Next step">
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+            </button>
+            <button class="btn" id="btnPlay" title="Auto-play search">
+              <span id="playIcon">▶</span> <span id="playLabel">Auto-play</span>
+            </button>
+          </div>
+
+          <div class="speed-control">
+            <label for="speedSlider">Speed:</label>
+            <input type="range" id="speedSlider" min="200" max="1400" step="100" value="700">
+            <span id="speedValue">0.7s</span>
+          </div>
+        </div>
+
+        <div class="order-banner" style="margin-top: 12px;">
+          <span><strong>Action Tie-breaking Order:</strong> Fixed preference order</span>
+          <span class="order-sequence">1. UP &rarr; 2. RIGHT &rarr; 3. DOWN &rarr; 4. LEFT</span>
+        </div>
+      </div>
+
+      <!-- DYNAMIC NARRATION LINE -->
+      <div class="narration-box" id="narrationBox">
+        <span class="narration-step-tag" id="stepCounterTag">Step 0 of 0</span>
+        <div id="narrationText" style="color:var(--text-main);">Click <strong>Next</strong> or <strong>Auto-play</strong> to start DFS exploration.</div>
+      </div>
+
+      <!-- METRICS & ACTION EVALUATION -->
+      <div class="step-metrics-grid">
+        <div class="metric-card">
+          <div class="metric-header">Current State (s)</div>
+          <div class="metric-val" id="metricCurrentState" style="color:var(--accent-amber);">(0, 0) [Start]</div>
+          <div style="font-size: 0.75rem; color:var(--text-muted); margin-top:2px;">
+            Goal Test: <span id="metricGoalTest" style="font-weight:600; color:var(--accent-rose);">False</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">Legal Actions &amp; Filter</div>
+          <div class="actions-list" id="metricActionsList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-header">Decision &amp; Rationale</div>
+          <div id="metricDecision" style="font-size: 0.82rem; line-height: 1.35; color: var(--text-main);">
+            Evaluating initial state.
+          </div>
+          <div style="font-size: 0.75rem; color:var(--text-muted); margin-top:4px;">
+            Explored Count: <strong id="metricExploredCount" style="color:var(--accent-blue);">0</strong> cells
+          </div>
+        </div>
+      </div>
+
+      <!-- FRONTIER STACK & SEARCH TREE VISUALIZER -->
+      <div class="split-structures">
+        <!-- STACK FRONTIER -->
+        <div class="stack-panel">
+          <div class="card-title" style="font-size: 0.95rem; margin-bottom: 4px;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>
+            Frontier (Stack)
+          </div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">LIFO: Newest items on top</div>
+          <div class="stack-list" id="stackList">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+
+        <!-- SEARCH TREE -->
+        <div class="tree-panel">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <div class="card-title" style="font-size: 0.95rem; margin-bottom:0;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"></circle><circle cx="5" cy="19" r="3"></circle><circle cx="19" cy="19" r="3"></circle><line x1="12" y1="8" x2="5" y2="16"></line><line x1="12" y1="8" x2="19" y2="16"></line></svg>
+              Search Tree (Unrolled State Space)
+            </div>
+            <span style="font-size:0.7rem; color:var(--text-muted);">Draggable/Scrollable</span>
+          </div>
+          <div class="tree-scroll-container" id="treeContainer">
+            <svg class="tree-svg" id="treeSvg"></svg>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- 3. CLOSING SUMMARY & BFS COMPARISON -->
+  <section class="card" aria-label="DFS Concept Summary">
+    <div class="card-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+      Key Takeaways &amp; AI Search Properties
+    </div>
+    <div class="summary-grid">
+      <ul class="key-points-list">
+        <li class="key-point-item">
+          <div class="point-number">1</div>
+          <div>
+            <strong>Deep Exploration Before Backtracking:</strong> DFS plunges down a single trajectory until it reaches a dead end or the goal. It only backs up when all legal actions from the current frontier branch have been exhausted.
+          </div>
+        </li>
+        <li class="key-point-item">
+          <div class="point-number">2</div>
+          <div>
+            <strong>Low Memory Consumption:</strong> Unlike BFS which stores entire frontier widths, DFS only maintains the current active path plus untried sibling branches, requiring <code>O(b &times; m)</code> space where <em>b</em> is branching factor and <em>m</em> is maximum depth.
+          </div>
+        </li>
+        <li class="key-point-item">
+          <div class="point-number">3</div>
+          <div>
+            <strong>Finds a Solution, But Not Necessarily Shortest:</strong> DFS is not optimal in unweighted graphs. Because it commits deeply to the first path it stumbles into, it may discover a long winding route instead of the minimal step trajectory.
+          </div>
+        </li>
+      </ul>
+
+      <!-- BFS VS DFS COMPARISON -->
+      <div class="comparison-box">
+        <div style="font-weight:700; font-size:0.88rem; color:var(--accent-blue);">DFS vs BFS on this exact maze</div>
+        <div class="comparison-row">
+          <span class="compare-tag">DFS Path Length:</span>
+          <span class="compare-value" id="compDfsPath">17 steps (winding)</span>
+        </div>
+        <div class="comparison-row">
+          <span class="compare-tag">BFS Shortest Path:</span>
+          <span class="compare-value" id="compBfsPath">11 steps (optimal)</span>
+        </div>
+        <div class="comparison-row">
+          <span class="compare-tag">Cycle Prevention:</span>
+          <span class="compare-value">Explored Set prevents infinite loop at reconverging state (3, 3)</span>
+        </div>
+        <div class="comparison-row">
+          <span class="compare-tag">Completeness:</span>
+          <span class="compare-value">Complete in finite state spaces with graph search (visited checking)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ==========================================================================
+   MAZE DEFINITION & PROBLEM SPACE SETUP
+   Grid: 6x6
+   0 = Open cell
+   1 = Wall
+   Start = (0, 0)
+   Goal = (5, 5)
+
+   Key characteristics:
+   - Dead end corridor 1: (0,2) -> (0,3) (dead end)
+   - Dead end corridor 2: (4,1) -> (5,1) (dead end)
+   - Reconverging spot (two paths to same cell): (3,3) can be reached from
+     top (2,3) and from left (3,2). Demonstrates the critical role of "already visited".
+   ========================================================================== */
+
+const ROWS = 6;
+const COLS = 6;
+const START = { r: 0, c: 0 };
+const GOAL = { r: 5, c: 5 };
+
+const MAZE = [
+  [0, 0, 0, 0, 1, 0], // (0,2)->(0,3) dead end
+  [0, 1, 1, 0, 1, 0],
+  [0, 0, 0, 0, 0, 0], // (2,3) leads down to (3,3)
+  [1, 0, 1, 0, 1, 0], // (3,1)->(3,2)->(3,3) reconvergence!
+  [0, 0, 1, 0, 0, 0], // (4,1)->(5,1) dead end
+  [1, 0, 1, 1, 1, 0]  // (5,5) is GOAL
+];
+
+// Fixed DFS tie-breaking action order as requested
+const ACTIONS = [
+  { name: 'Up',    dr: -1, dc:  0 },
+  { name: 'Right', dr:  0, dc:  1 },
+  { name: 'Down',  dr:  1, dc:  0 },
+  { name: 'Left',  dr:  0, dc: -1 }
+];
+
+function isCellValid(r, c) {
+  return r >= 0 && r < ROWS && c >= 0 && c < COLS && MAZE[r][c] === 0;
+}
+
+function coordStr(r, c) {
+  return `(${r}, ${c})`;
+}
+
+/* ==========================================================================
+   DFS SIMULATOR & STEP SNAPSHOT PRECOMPUTATION
+   ========================================================================== */
+let snapshots = [];
+let bfsShortestCount = 0;
+
+function computeBfsPathLength() {
+  const queue = [{ r: START.r, c: START.c, dist: 1 }];
+  const visited = new Set([`${START.r},${START.c}`]);
+
+  while (queue.length > 0) {
+    const cur = queue.shift();
+    if (cur.r === GOAL.r && cur.c === GOAL.c) {
+      return cur.dist;
+    }
+    for (const act of ACTIONS) {
+      const nr = cur.r + act.dr;
+      const nc = cur.c + act.dc;
+      const key = `${nr},${nc}`;
+      if (isCellValid(nr, nc) && !visited.has(key)) {
+        visited.add(key);
+        queue.push({ r: nr, c: nc, dist: cur.dist + 1 });
+      }
+    }
+  }
+  return 0;
+}
+
+function precomputeDfsSteps() {
+  snapshots = [];
+  
+  // DFS stack contains nodes: { r, c, parentId, actionFromParent, id }
+  let nodeIdCounter = 0;
+  const rootNode = {
+    id: nodeIdCounter++,
+    r: START.r,
+    c: START.c,
+    parentId: null,
+    action: 'Start',
+    depth: 0
+  };
+
+  const stack = [rootNode];
+  const explored = new Set();
+  const deadEnds = new Set();
+  const treeNodes = [rootNode];
+  const treeEdges = [];
+
+  // Snapshot 0: Initial State
+  snapshots.push({
+    current: { r: START.r, c: START.c, id: rootNode.id },
+    stack: [{ ...rootNode }],
+    explored: new Set(),
+    deadEnds: new Set(),
+    actionTaken: null,
+    legalActions: [
+      { name: 'Up', valid: false, reason: 'Wall/Boundary' },
+      { name: 'Right', valid: true, target: { r: 0, c: 1 }, visited: false },
+      { name: 'Down', valid: true, target: { r: 1, c: 0 }, visited: false },
+      { name: 'Left', valid: false, reason: 'Wall/Boundary' }
+    ],
+    rationale: 'Initial state S = (0, 0). Push to frontier stack and commence search.',
+    narration: 'Starting at initial state (0, 0). Examining legal moves in fixed priority order: Up, Right, Down, Left.',
+    isDeadEnd: false,
+    goalFound: false,
+    finalPath: null,
+    treeNodes: [...treeNodes],
+    treeEdges: [...treeEdges]
+  });
+
+  while (stack.length > 0) {
+    const currentNode = stack[stack.length - 1]; // peek top
+    const { r, c, id } = currentNode;
+    const currentKey = `${r},${c}`;
+
+    if (!explored.has(currentKey)) {
+      explored.add(currentKey);
+    }
+
+    // Check Goal
+    if (r === GOAL.r && c === GOAL.c) {
+      // Reconstruct final path from root to goal in the tree
+      const pathCells = [];
+      let traceId = currentNode.id;
+      while (traceId !== null) {
+        const n = treeNodes.find(item => item.id === traceId);
+        pathCells.push({ r: n.r, c: n.c });
+        traceId = n.parentId;
+      }
+      pathCells.reverse();
+
+      snapshots.push({
+        current: { r, c, id },
+        stack: stack.map(s => ({ ...s })),
+        explored: new Set(explored),
+        deadEnds: new Set(deadEnds),
+        actionTaken: 'Goal reached',
+        legalActions: [],
+        rationale: `Goal state G = (5, 5) reached! Goal test returns TRUE. Search terminates successfully.`,
+        narration: `🎉 Goal state G = (5, 5) found! Backtracking complete. Final solution path contains ${pathCells.length} states.`,
+        isDeadEnd: false,
+        goalFound: true,
+        finalPath: pathCells,
+        treeNodes: [...treeNodes],
+        treeEdges: [...treeEdges]
+      });
+      break;
+    }
+
+    // Evaluate legal actions from (r, c)
+    const evaluatedActions = [];
+    let chosenAction = null;
+    let chosenTarget = null;
+
+    for (const act of ACTIONS) {
+      const nr = r + act.dr;
+      const nc = c + act.dc;
+      const targetKey = `${nr},${nc}`;
+
+      if (!isCellValid(nr, nc)) {
+        evaluatedActions.push({
+          name: act.name,
+          valid: false,
+          reason: 'Wall/Boundary'
+        });
+      } else if (explored.has(targetKey)) {
+        evaluatedActions.push({
+          name: act.name,
+          valid: true,
+          target: { r: nr, c: nc },
+          visited: true,
+          reason: 'Already Explored'
+        });
+      } else {
+        // Legal and unvisited
+        const evalItem = {
+          name: act.name,
+          valid: true,
+          target: { r: nr, c: nc },
+          visited: false,
+          reason: 'Unvisited'
+        };
+        evaluatedActions.push(evalItem);
+        if (!chosenAction) {
+          chosenAction = act;
+          chosenTarget = { r: nr, c: nc };
+        }
+      }
+    }
+
+    if (chosenAction) {
+      // Create child node and push to stack
+      const childNode = {
+        id: nodeIdCounter++,
+        r: chosenTarget.r,
+        c: chosenTarget.c,
+        parentId: id,
+        action: chosenAction.name,
+        depth: currentNode.depth + 1
+      };
+
+      stack.push(childNode);
+      treeNodes.push(childNode);
+      treeEdges.push({ from: id, to: childNode.id });
+
+      let reconvergeNote = '';
+      if (chosenTarget.r === 3 && chosenTarget.c === 3) {
+        reconvergeNote = ' [Key spot: (3,3) has two incoming corridors; marked so second branch won\'t re-enter!]';
+      }
+
+      snapshots.push({
+        current: { r: chosenTarget.r, c: chosenTarget.c, id: childNode.id },
+        stack: stack.map(s => ({ ...s })),
+        explored: new Set(explored),
+        deadEnds: new Set(deadEnds),
+        actionTaken: chosenAction.name,
+        legalActions: evaluatedActions,
+        rationale: `From ${coordStr(r, c)}, action '${chosenAction.name}' is the first untried move leading to unvisited ${coordStr(chosenTarget.r, chosenTarget.c)}.${reconvergeNote}`,
+        narration: `Moved ${chosenAction.name} to ${coordStr(chosenTarget.r, chosenTarget.c)}. Pushed ${coordStr(chosenTarget.r, chosenTarget.c)} onto frontier stack.`,
+        isDeadEnd: false,
+        goalFound: false,
+        finalPath: null,
+        treeNodes: [...treeNodes],
+        treeEdges: [...treeEdges]
+      });
+
+    } else {
+      // Dead end reached! Backtrack by popping current top
+      deadEnds.add(currentKey);
+      const popped = stack.pop();
+
+      if (stack.length > 0) {
+        const nextTop = stack[stack.length - 1];
+        snapshots.push({
+          current: { r: nextTop.r, c: nextTop.c, id: nextTop.id },
+          stack: stack.map(s => ({ ...s })),
+          explored: new Set(explored),
+          deadEnds: new Set(deadEnds),
+          actionTaken: 'Backtrack',
+          legalActions: evaluatedActions,
+          rationale: `No untried unvisited moves remaining at ${coordStr(popped.r, popped.c)}. Marked as dead end. Pop from stack.`,
+          narration: `Dead end at ${coordStr(popped.r, popped.c)}. Backing up to ${coordStr(nextTop.r, nextTop.c)}, which still has untried actions in the frontier.`,
+          isDeadEnd: true,
+          deadEndCell: { r: popped.r, c: popped.c },
+          goalFound: false,
+          finalPath: null,
+          treeNodes: [...treeNodes],
+          treeEdges: [...treeEdges]
+        });
+      } else {
+        // Stack exhausted without goal
+        snapshots.push({
+          current: null,
+          stack: [],
+          explored: new Set(explored),
+          deadEnds: new Set(deadEnds),
+          actionTaken: 'Exhausted',
+          legalActions: [],
+          rationale: 'Frontier is empty. All reachable states have been explored.',
+          narration: 'Search terminated. No solution found.',
+          isDeadEnd: true,
+          goalFound: false,
+          finalPath: null,
+          treeNodes: [...treeNodes],
+          treeEdges: [...treeEdges]
+        });
+        break;
+      }
+    }
+  }
+}
+
+/* ==========================================================================
+   UI RENDERING & CONTROLLER STATE
+   ========================================================================== */
+let currentStepIdx = 0;
+let isPlaying = false;
+let playInterval = null;
+
+const gridBoardEl = document.getElementById('gridBoard');
+const cellTooltipEl = document.getElementById('cellTooltip');
+const btnReset = document.getElementById('btnReset');
+const btnBack = document.getElementById('btnBack');
+const btnNext = document.getElementById('btnNext');
+const btnPlay = document.getElementById('btnPlay');
+const playIcon = document.getElementById('playIcon');
+const playLabel = document.getElementById('playLabel');
+const speedSlider = document.getElementById('speedSlider');
+const speedValue = document.getElementById('speedValue');
+
+const narrationTextEl = document.getElementById('narrationText');
+const stepCounterTagEl = document.getElementById('stepCounterTag');
+const metricCurrentStateEl = document.getElementById('metricCurrentState');
+const metricGoalTestEl = document.getElementById('metricGoalTest');
+const metricActionsListEl = document.getElementById('metricActionsList');
+const metricDecisionEl = document.getElementById('metricDecision');
+const metricExploredCountEl = document.getElementById('metricExploredCount');
+const stackListEl = document.getElementById('stackList');
+const treeSvgEl = document.getElementById('treeSvg');
+const treeContainerEl = document.getElementById('treeContainer');
+
+const compDfsPathEl = document.getElementById('compDfsPath');
+const compBfsPathEl = document.getElementById('compBfsPath');
+const themeToggleBtn = document.getElementById('themeToggleBtn');
+const themeIcon = document.getElementById('themeIcon');
+const themeLabel = document.getElementById('themeLabel');
+
+// Initialize Grid DOM
+function initGridDOM() {
+  gridBoardEl.innerHTML = '';
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const cell = document.createElement('div');
+      cell.classList.add('cell');
+      cell.dataset.r = r;
+      cell.dataset.c = c;
+      cell.id = `cell-${r}-${c}`;
+
+      if (MAZE[r][c] === 1) {
+        cell.classList.add('wall');
+        cell.title = `Wall at (${r},${c})`;
+      } else {
+        cell.classList.add('empty');
+        if (r === START.r && c === START.c) {
+          const badge = document.createElement('span');
+          badge.className = 'cell-badge';
+          badge.textContent = 'S';
+          cell.appendChild(badge);
+        } else if (r === GOAL.r && c === GOAL.c) {
+          const badge = document.createElement('span');
+          badge.className = 'cell-badge';
+          badge.textContent = 'G';
+          cell.appendChild(badge);
+        } else {
+          const coordSub = document.createElement('span');
+          coordSub.className = 'cell-coord-sub';
+          coordSub.textContent = `${r},${c}`;
+          cell.appendChild(coordSub);
+        }
+      }
+
+      // Hover events for cell inspection
+      cell.addEventListener('mouseenter', (e) => onCellHover(r, c, e));
+      cell.addEventListener('mouseleave', () => {
+        cellTooltipEl.style.display = 'none';
+      });
+
+      gridBoardEl.appendChild(cell);
+    }
+  }
+}
+
+function onCellHover(r, c, e) {
+  if (MAZE[r][c] === 1) {
+    cellTooltipEl.innerHTML = `<strong>(${r}, ${c})</strong>: Wall (Impermeable obstacle)`;
+  } else {
+    const validMoves = [];
+    ACTIONS.forEach(a => {
+      const nr = r + a.dr;
+      const nc = c + a.dc;
+      if (isCellValid(nr, nc)) {
+        validMoves.push(a.name);
+      }
+    });
+    cellTooltipEl.innerHTML = `<strong>State (${r}, ${c})</strong><br>Legal actions: ${validMoves.length > 0 ? validMoves.join(', ') : 'None'}`;
+  }
+  cellTooltipEl.style.display = 'block';
+}
+
+/* ==========================================================================
+   RENDER STEP SNAPSHOT
+   ========================================================================== */
+function renderSnapshot(idx) {
+  if (idx < 0 || idx >= snapshots.length) return;
+  const snap = snapshots[idx];
+
+  // 1. Update Grid Cells
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (MAZE[r][c] === 1) continue;
+      const cell = document.getElementById(`cell-${r}-${c}`);
+      cell.className = 'cell empty';
+
+      const key = `${r},${c}`;
+      if (snap.explored.has(key)) {
+        cell.classList.add('explored');
+      }
+
+      if (snap.deadEnds.has(key)) {
+        cell.classList.add('deadend');
+      }
+
+      // In Stack
+      const inStack = snap.stack.some(s => s.r === r && s.c === c);
+      if (inStack) {
+        cell.classList.add('stack');
+      }
+
+      // Current cell
+      if (snap.current && snap.current.r === r && snap.current.c === c) {
+        cell.classList.add('current');
+      }
+
+      // Goal
+      if (snap.goalFound && r === GOAL.r && c === GOAL.c) {
+        cell.classList.add('goal-found');
+      }
+
+      // Final Path
+      if (snap.finalPath && snap.finalPath.some(p => p.r === r && p.c === c)) {
+        cell.classList.add('final-path');
+      }
+    }
+  }
+
+  // 2. Narration & Controls status
+  stepCounterTagEl.textContent = `Step ${idx} of ${snapshots.length - 1} | Action: ${snap.actionTaken || 'Initialize'}`;
+  narrationTextEl.innerHTML = snap.narration;
+  metricCurrentStateEl.textContent = snap.current ? `${coordStr(snap.current.r, snap.current.c)}` : 'None';
+  
+  const isGoal = snap.current && snap.current.r === GOAL.r && snap.current.c === GOAL.c;
+  metricGoalTestEl.textContent = isGoal ? 'TRUE (Exit reached)' : 'False';
+  metricGoalTestEl.style.color = isGoal ? 'var(--accent-green)' : 'var(--text-muted)';
+
+  metricExploredCountEl.textContent = snap.explored.size;
+  metricDecisionEl.textContent = snap.rationale;
+
+  // 3. Legal Actions Display
+  metricActionsListEl.innerHTML = '';
+  if (snap.legalActions && snap.legalActions.length > 0) {
+    snap.legalActions.forEach(a => {
+      const badge = document.createElement('div');
+      badge.className = 'action-badge';
+      if (!a.valid) {
+        badge.classList.add('strike');
+        badge.innerHTML = `✕ ${a.name}: ${a.reason}`;
+      } else if (a.visited) {
+        badge.classList.add('strike');
+        badge.innerHTML = `✕ ${a.name} &rarr; ${coordStr(a.target.r, a.target.c)} (Visited)`;
+      } else {
+        const isChosen = snap.actionTaken === a.name;
+        if (isChosen) badge.classList.add('selected');
+        badge.innerHTML = `${isChosen ? '★' : '✓'} ${a.name} &rarr; ${coordStr(a.target.r, a.target.c)} (Unvisited)`;
+      }
+      metricActionsListEl.appendChild(badge);
+    });
+  } else if (snap.isDeadEnd) {
+    metricActionsListEl.innerHTML = `<span style="font-size:0.75rem; color:var(--accent-rose); font-family:var(--font-mono);">No untried forward moves. Initiating Backtrack.</span>`;
+  } else if (snap.goalFound) {
+    metricActionsListEl.innerHTML = `<span style="font-size:0.75rem; color:var(--accent-green); font-family:var(--font-mono);">Goal reached. Search completed.</span>`;
+  }
+
+  // 4. Frontier Stack (Vertical, Newest on Top)
+  stackListEl.innerHTML = '';
+  if (snap.stack.length === 0) {
+    stackListEl.innerHTML = '<div style="font-size:0.75rem; color:var(--text-muted); padding:6px;">Stack is empty</div>';
+  } else {
+    for (let i = snap.stack.length - 1; i >= 0; i--) {
+      const item = snap.stack[i];
+      const div = document.createElement('div');
+      div.className = 'stack-item';
+      if (i === snap.stack.length - 1) {
+        div.classList.add('top');
+        div.innerHTML = `<span>${coordStr(item.r, item.c)} <span style="font-size:0.7rem; opacity:0.8;">[${item.action}]</span></span> <span class="stack-top-badge">TOP</span>`;
+      } else {
+        div.innerHTML = `<span>${coordStr(item.r, item.c)} <span style="font-size:0.7rem; opacity:0.8;">[${item.action}]</span></span>`;
+      }
+      stackListEl.appendChild(div);
+    }
+  }
+
+  // 5. Update Buttons
+  btnBack.disabled = idx === 0;
+  btnNext.disabled = idx === snapshots.length - 1;
+
+  // 6. Render Search Tree SVG
+  renderSearchTree(snap);
+}
+
+/* ==========================================================================
+   SEARCH TREE RENDERER (SVG)
+   Dynamically unrolls graph exploration into a tree
+   ========================================================================== */
+function renderSearchTree(snap) {
+  treeSvgEl.innerHTML = '';
+  if (!snap.treeNodes || snap.treeNodes.length === 0) return;
+
+  // Compute node depths and horizontal spacing
+  const depthGroups = {};
+  snap.treeNodes.forEach(node => {
+    if (!depthGroups[node.depth]) depthGroups[node.depth] = [];
+    depthGroups[node.depth].push(node);
+  });
+
+  const maxDepth = Math.max(...Object.keys(depthGroups).map(Number));
+  const levelHeight = 44;
+  const minWidth = Math.max(500, (maxDepth + 1) * 75);
+  const minHeight = 240;
+
+  treeSvgEl.setAttribute('width', minWidth);
+  treeSvgEl.setAttribute('height', Math.max(minHeight, (maxDepth + 1) * levelHeight + 40));
+
+  const nodePositions = new Map();
+
+  // Lay out tree horizontally: X increases with Depth, Y spreads across siblings
+  const levels = Object.keys(depthGroups).map(Number).sort((a,b)=>a-b);
+  levels.forEach(d => {
+    const nodes = depthGroups[d];
+    const x = 40 + d * 64;
+    const count = nodes.length;
+    const totalSpan = 180;
+    const stepY = count > 1 ? totalSpan / (count - 1) : 0;
+    const startY = 110 - (count - 1) * (stepY / 2);
+
+    nodes.forEach((n, idx) => {
+      const y = count === 1 ? 110 : startY + idx * stepY;
+      nodePositions.set(n.id, { x, y });
+    });
+  });
+
+  // Draw Edges
+  snap.treeEdges.forEach(edge => {
+    const fromPos = nodePositions.get(edge.from);
+    const toPos = nodePositions.get(edge.to);
+    if (!fromPos || !toPos) return;
+
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', fromPos.x);
+    line.setAttribute('y1', fromPos.y);
+    line.setAttribute('x2', toPos.x);
+    line.setAttribute('y2', toPos.y);
+    line.setAttribute('class', 'tree-edge');
+
+    // Check if on final path
+    if (snap.finalPath) {
+      const fromNode = snap.treeNodes.find(n => n.id === edge.from);
+      const toNode = snap.treeNodes.find(n => n.id === edge.to);
+      const isFromInPath = snap.finalPath.some(p => p.r === fromNode.r && p.c === fromNode.c);
+      const isToInPath = snap.finalPath.some(p => p.r === toNode.r && p.c === toNode.c);
+      if (isFromInPath && isToInPath) {
+        line.classList.add('final-path');
+      }
+    }
+    treeSvgEl.appendChild(line);
+  });
+
+  // Draw Nodes
+  snap.treeNodes.forEach(n => {
+    const pos = nodePositions.get(n.id);
+    if (!pos) return;
+
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    circle.setAttribute('cx', pos.x);
+    circle.setAttribute('cy', pos.y);
+    circle.setAttribute('r', '13');
+    circle.setAttribute('class', 'tree-node-circle');
+
+    const key = `${n.r},${n.c}`;
+    const isCurrent = snap.current && snap.current.id === n.id;
+    const isDead = snap.deadEnds.has(key);
+    const isGoal = n.r === GOAL.r && n.c === GOAL.c && snap.goalFound;
+    const isFinalPath = snap.finalPath && snap.finalPath.some(p => p.r === n.r && p.c === n.c);
+
+    let fillColor = 'var(--surface-hover)';
+    let strokeColor = 'var(--surface-border)';
+    let textColor = 'var(--text-main)';
+
+    if (isGoal || isFinalPath) {
+      fillColor = 'var(--cell-path)';
+      strokeColor = '#064e3b';
+      textColor = '#064e3b';
+    } else if (isCurrent) {
+      fillColor = 'var(--cell-current)';
+      strokeColor = '#b45309';
+      textColor = '#78350f';
+    } else if (isDead) {
+      fillColor = 'var(--cell-deadend)';
+      strokeColor = '#881337';
+      textColor = '#881337';
+    } else if (snap.stack.some(s => s.id === n.id)) {
+      fillColor = 'var(--cell-stack)';
+      strokeColor = 'var(--accent-indigo)';
+      textColor = '#1e1b4b';
+    }
+
+    circle.setAttribute('fill', fillColor);
+    circle.setAttribute('stroke', strokeColor);
+    circle.setAttribute('stroke-width', isCurrent ? '2.5' : '1.5');
+
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('x', pos.x);
+    text.setAttribute('y', pos.y);
+    text.setAttribute('class', 'tree-node-text');
+    text.setAttribute('fill', textColor);
+    text.textContent = `${n.r},${n.c}`;
+
+    g.appendChild(circle);
+    g.appendChild(text);
+    treeSvgEl.appendChild(g);
+
+    // Auto scroll tree container to follow current node
+    if (isCurrent) {
+      const scrollLeft = Math.max(0, pos.x - treeContainerEl.clientWidth / 2);
+      treeContainerEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+    }
+  });
+}
+
+/* ==========================================================================
+   PLAYER CONTROLS & AUTO-PLAY
+   ========================================================================== */
+function nextStep() {
+  if (currentStepIdx < snapshots.length - 1) {
+    currentStepIdx++;
+    renderSnapshot(currentStepIdx);
+  } else {
+    stopAutoPlay();
+  }
+}
+
+function prevStep() {
+  if (currentStepIdx > 0) {
+    currentStepIdx--;
+    renderSnapshot(currentStepIdx);
+  }
+}
+
+function resetSearch() {
+  stopAutoPlay();
+  currentStepIdx = 0;
+  renderSnapshot(0);
+}
+
+function toggleAutoPlay() {
+  if (isPlaying) {
+    stopAutoPlay();
+  } else {
+    startAutoPlay();
+  }
+}
+
+function startAutoPlay() {
+  if (currentStepIdx >= snapshots.length - 1) {
+    currentStepIdx = 0;
+  }
+  isPlaying = true;
+  playIcon.textContent = '⏸';
+  playLabel.textContent = 'Pause';
+  btnPlay.classList.add('primary');
+
+  const speed = parseInt(speedSlider.value, 10);
+  playInterval = setInterval(() => {
+    if (currentStepIdx < snapshots.length - 1) {
+      nextStep();
+    } else {
+      stopAutoPlay();
+    }
+  }, speed);
+}
+
+function stopAutoPlay() {
+  isPlaying = false;
+  clearInterval(playInterval);
+  playInterval = null;
+  playIcon.textContent = '▶';
+  playLabel.textContent = 'Auto-play';
+  btnPlay.classList.remove('primary');
+}
+
+/* ==========================================================================
+   EVENT LISTENERS
+   ========================================================================== */
+btnNext.addEventListener('click', () => {
+  stopAutoPlay();
+  nextStep();
+});
+
+btnBack.addEventListener('click', () => {
+  stopAutoPlay();
+  prevStep();
+});
+
+btnReset.addEventListener('click', resetSearch);
+btnPlay.addEventListener('click', toggleAutoPlay);
+
+speedSlider.addEventListener('input', (e) => {
+  const val = e.target.value;
+  speedValue.textContent = (val / 1000).toFixed(1) + 's';
+  if (isPlaying) {
+    stopAutoPlay();
+    startAutoPlay();
+  }
+});
+
+// Theme switcher
+let isDarkMode = true;
+themeToggleBtn.addEventListener('click', () => {
+  isDarkMode = !isDarkMode;
+  if (isDarkMode) {
+    document.documentElement.removeAttribute('data-theme');
+    themeIcon.textContent = '☀️';
+    themeLabel.textContent = 'Light Mode';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'light');
+    themeIcon.textContent = '🌙';
+    themeLabel.textContent = 'Dark Mode';
+  }
+  renderSnapshot(currentStepIdx);
+});
+
+// Keyboard Navigation
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'ArrowRight' || e.key === 'n') {
+    stopAutoPlay();
+    nextStep();
+  } else if (e.key === 'ArrowLeft' || e.key === 'b') {
+    stopAutoPlay();
+    prevStep();
+  } else if (e.key === ' ') {
+    e.preventDefault();
+    toggleAutoPlay();
+  } else if (e.key === 'r') {
+    resetSearch();
+  }
+});
+
+/* ==========================================================================
+   INITIALIZATION
+   ========================================================================== */
+window.addEventListener('DOMContentLoaded', () => {
+  initGridDOM();
+  bfsShortestCount = computeBfsPathLength();
+  precomputeDfsSteps();
+
+  const lastSnap = snapshots[snapshots.length - 1];
+  const dfsPathLen = lastSnap.finalPath ? lastSnap.finalPath.length : 0;
+  compDfsPathEl.textContent = `${dfsPathLen} steps (winding exploratory path)`;
+  compBfsPathEl.textContent = `${bfsShortestCount} steps (optimal shortest path)`;
+
+  renderSnapshot(0);
+});
+</script>
+</body>
+</html>

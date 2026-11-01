@@ -1,0 +1,7 @@
+services:
+  dfs-visualizer:
+    build: .
+    container_name: dfs-maze-visualizer
+    ports:
+      - "8080:80"
+    restart: unless-stopped
