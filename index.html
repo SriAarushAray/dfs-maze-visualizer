@@ -261,6 +261,14 @@
       box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
     }
 
+    .mode-btn.active.wall {
+      background: rgba(148, 163, 184, 0.25);
+      border-color: var(--text-muted);
+      color: var(--text-main);
+      font-weight: 700;
+      box-shadow: 0 0 8px rgba(148, 163, 184, 0.4);
+    }
+
     .maze-wrapper {
       position: relative;
       background: var(--surface);
@@ -1040,14 +1048,17 @@
     <!-- LEFT: MAZE & COLOR LEGEND -->
     <div class="maze-column">
       
-      <!-- INTERACTIVE SOURCE & GOAL POSITION SELECTOR -->
+      <!-- INTERACTIVE SOURCE, GOAL & WALL BLOCK SELECTOR -->
       <div class="edit-mode-bar">
-        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Click To Set:</span>
+        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Click To Place:</span>
         <button class="mode-btn active source" id="btnSetSource" title="Click any cell in the maze to set Start position">
           🟢 Start (S)
         </button>
         <button class="mode-btn goal" id="btnSetGoal" title="Click any cell in the maze to set Goal position">
           🎯 Goal (G)
+        </button>
+        <button class="mode-btn wall" id="btnSetWall" title="Click any cell in the maze to add or remove a wall block">
+          🧱 Wall (+/-)
         </button>
       </div>
 
@@ -1721,6 +1732,7 @@ const speedValue = document.getElementById('speedValue');
 
 const btnSetSource = document.getElementById('btnSetSource');
 const btnSetGoal = document.getElementById('btnSetGoal');
+const btnSetWall = document.getElementById('btnSetWall');
 const vocabInitialState = document.getElementById('vocabInitialState');
 const vocabGoalState = document.getElementById('vocabGoalState');
 
@@ -1760,7 +1772,7 @@ function initGridDOM() {
         updateCellLabels(cell, r, c);
       }
 
-      // Cell click to set Start or Goal
+      // Cell click to set Start, Goal, or Toggle Wall
       cell.addEventListener('click', () => onCellClick(r, c));
 
       // Hover events for cell inspection
@@ -1809,25 +1821,45 @@ function updateCellLabels(cell, r, c) {
 }
 
 function onCellClick(r, c) {
-  if (MAZE[r][c] === 1) return; // Cannot place on wall
-
   stopAutoPlay();
 
-  if (placementMode === 'source') {
-    if (r === GOAL.r && c === GOAL.c) {
-      GOAL = { r: START.r, c: START.c };
+  if (placementMode === 'wall') {
+    // Cannot turn Start or Goal into a wall
+    if ((r === START.r && c === START.c) || (r === GOAL.r && c === GOAL.c)) {
+      return;
     }
-    START = { r, c };
+    // Toggle Wall (1 <-> 0)
+    MAZE[r][c] = MAZE[r][c] === 1 ? 0 : 1;
+    const cEl = document.getElementById(`cell-${r}-${c}`);
+    if (cEl) {
+      if (MAZE[r][c] === 1) {
+        cEl.className = 'cell wall';
+        cEl.innerHTML = '';
+        cEl.title = `Wall at (${r},${c})`;
+      } else {
+        cEl.className = 'cell empty';
+        updateCellLabels(cEl, r, c);
+      }
+    }
   } else {
-    if (r === START.r && c === START.c) {
-      START = { r: GOAL.r, c: GOAL.c };
-    }
-    GOAL = { r, c };
-  }
+    if (MAZE[r][c] === 1) return; // Cannot place Start or Goal on existing wall
 
-  // Update vocabulary definitions
-  vocabInitialState.innerHTML = `Start cell <code>S = ${coordStr(START.r, START.c)}</code>`;
-  vocabGoalState.innerHTML = `Exit cell <code>G = ${coordStr(GOAL.r, GOAL.c)}</code>`;
+    if (placementMode === 'source') {
+      if (r === GOAL.r && c === GOAL.c) {
+        GOAL = { r: START.r, c: START.c };
+      }
+      START = { r, c };
+    } else if (placementMode === 'goal') {
+      if (r === START.r && c === START.c) {
+        START = { r: GOAL.r, c: GOAL.c };
+      }
+      GOAL = { r, c };
+    }
+
+    // Update vocabulary definitions
+    vocabInitialState.innerHTML = `Start cell <code>S = ${coordStr(START.r, START.c)}</code>`;
+    vocabGoalState.innerHTML = `Exit cell <code>G = ${coordStr(GOAL.r, GOAL.c)}</code>`;
+  }
 
   // Re-render labels on all cells
   for (let row = 0; row < ROWS; row++) {
@@ -1858,7 +1890,7 @@ function recalculateSimulation() {
 
 function onCellHover(r, c, e) {
   if (MAZE[r][c] === 1) {
-    cellTooltipEl.innerHTML = `<strong>(${r}, ${c})</strong>: Wall (Impermeable obstacle)`;
+    cellTooltipEl.innerHTML = `<strong>Wall at (${r}, ${c})</strong><br>${placementMode === 'wall' ? 'Click to remove wall block' : 'Impermeable obstacle'}`;
   } else {
     const validMoves = [];
     ACTIONS.forEach(a => {
@@ -1869,7 +1901,8 @@ function onCellHover(r, c, e) {
       }
     });
     const role = (r === START.r && c === START.c) ? ' [START]' : (r === GOAL.r && c === GOAL.c) ? ' [GOAL]' : '';
-    cellTooltipEl.innerHTML = `<strong>State (${r}, ${c})${role}</strong><br>Click to set as <em>${placementMode === 'source' ? 'Start' : 'Goal'}</em><br>Legal actions: ${validMoves.length > 0 ? validMoves.join(', ') : 'None'}`;
+    let modeAction = `Click to set as <em>${placementMode === 'source' ? 'Start' : placementMode === 'goal' ? 'Goal' : 'Wall Block'}</em>`;
+    cellTooltipEl.innerHTML = `<strong>State (${r}, ${c})${role}</strong><br>${modeAction}<br>Legal actions: ${validMoves.length > 0 ? validMoves.join(', ') : 'None'}`;
   }
   cellTooltipEl.style.display = 'block';
 }
@@ -2284,12 +2317,21 @@ btnSetSource.addEventListener('click', () => {
   placementMode = 'source';
   btnSetSource.classList.add('active');
   btnSetGoal.classList.remove('active');
+  btnSetWall.classList.remove('active');
 });
 
 btnSetGoal.addEventListener('click', () => {
   placementMode = 'goal';
   btnSetGoal.classList.add('active');
   btnSetSource.classList.remove('active');
+  btnSetWall.classList.remove('active');
+});
+
+btnSetWall.addEventListener('click', () => {
+  placementMode = 'wall';
+  btnSetWall.classList.add('active');
+  btnSetSource.classList.remove('active');
+  btnSetGoal.classList.remove('active');
 });
 
 btnWinningPathOnly.addEventListener('click', () => {
