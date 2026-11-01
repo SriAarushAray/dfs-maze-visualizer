@@ -77,11 +77,11 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1240px;
       margin: 0 auto;
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 20px;
     }
 
     header {
@@ -133,14 +133,14 @@
       background: var(--surface);
       border: 1px solid var(--surface-border);
       border-radius: 12px;
-      padding: 20px;
+      padding: 18px 20px;
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
     }
 
     .card-title {
-      font-size: 1.1rem;
+      font-size: 1.05rem;
       font-weight: 600;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       display: flex;
       align-items: center;
       gap: 8px;
@@ -203,12 +203,62 @@
       }
     }
 
-    /* MAZE CONTAINER */
+    /* MAZE CONTAINER & INTERACTION TOOLBAR */
     .maze-column {
       display: flex;
       flex-direction: column;
       gap: 14px;
       align-items: center;
+    }
+
+    /* EDIT TOOLBAR (SOURCE / GOAL PICKER) */
+    .edit-mode-bar {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 10px;
+      padding: 8px 10px;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid var(--surface-border);
+      background: var(--surface-hover);
+      color: var(--text-main);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+
+    .mode-btn:hover {
+      border-color: var(--accent-blue);
+    }
+
+    .mode-btn.active.source {
+      background: rgba(52, 211, 153, 0.2);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      font-weight: 700;
+      box-shadow: 0 0 8px rgba(52, 211, 153, 0.4);
+    }
+
+    .mode-btn.active.goal {
+      background: rgba(251, 191, 36, 0.2);
+      border-color: var(--accent-amber);
+      color: var(--accent-amber);
+      font-weight: 700;
+      box-shadow: 0 0 8px rgba(251, 191, 36, 0.4);
     }
 
     .maze-wrapper {
@@ -219,6 +269,9 @@
       padding: 12px;
       box-shadow: 0 4px 20px rgba(0,0,0,0.12);
       user-select: none;
+      width: 100%;
+      display: flex;
+      justify-content: center;
     }
 
     .grid-board {
@@ -255,6 +308,20 @@
     .cell.empty {
       background-color: var(--cell-empty);
       border-color: var(--surface-border);
+    }
+
+    .cell.empty:hover {
+      border-color: var(--accent-blue);
+      transform: scale(1.04);
+      z-index: 5;
+    }
+
+    .cell.is-source {
+      box-shadow: inset 0 0 0 2px var(--accent-green) !important;
+    }
+
+    .cell.is-goal {
+      box-shadow: inset 0 0 0 2px var(--accent-amber) !important;
     }
 
     .cell.explored {
@@ -302,14 +369,14 @@
     }
 
     .cell-badge {
-      font-size: 0.68rem;
-      font-weight: 700;
+      font-size: 0.72rem;
+      font-weight: 800;
       margin-top: 1px;
     }
 
     .cell-coord-sub {
       font-size: 0.55rem;
-      opacity: 0.7;
+      opacity: 0.75;
     }
 
     /* HOVER TOOLTIP */
@@ -342,6 +409,7 @@
       padding: 10px 14px;
       border-radius: 10px;
       font-size: 0.78rem;
+      width: 100%;
     }
 
     .legend-item {
@@ -376,6 +444,7 @@
     .btn-group {
       display: flex;
       gap: 6px;
+      flex-wrap: wrap;
     }
 
     .btn {
@@ -438,6 +507,8 @@
       align-items: center;
       justify-content: space-between;
       color: var(--accent-blue);
+      flex-wrap: wrap;
+      gap: 8px;
     }
 
     .order-sequence {
@@ -545,11 +616,11 @@
     /* SPLIT VIEW FOR STACK & TREE */
     .split-structures {
       display: grid;
-      grid-template-columns: 190px 1fr;
+      grid-template-columns: 210px 1fr;
       gap: 14px;
     }
 
-    @media (max-width: 720px) {
+    @media (max-width: 780px) {
       .split-structures {
         grid-template-columns: 1fr;
       }
@@ -569,7 +640,7 @@
       flex-direction: column;
       gap: 6px;
       margin-top: 8px;
-      max-height: 250px;
+      max-height: 380px;
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -615,12 +686,17 @@
 
     .tree-scroll-container {
       width: 100%;
-      height: 250px;
+      height: 380px;
       overflow: auto;
       background: rgba(0, 0, 0, 0.1);
       border-radius: 6px;
       border: 1px solid var(--surface-border);
       position: relative;
+      cursor: grab;
+    }
+
+    .tree-scroll-container:active {
+      cursor: grabbing;
     }
 
     [data-theme="dark"] .tree-scroll-container {
@@ -628,26 +704,24 @@
     }
 
     svg.tree-svg {
-      width: 100%;
-      height: 100%;
-      min-width: 500px;
-      min-height: 240px;
+      display: block;
+      overflow: visible;
     }
 
     /* TREE SVG NODES */
     .tree-edge {
       stroke: var(--surface-border);
-      stroke-width: 1.8;
+      stroke-width: 2.2;
       stroke-linecap: round;
       transition: stroke 0.2s;
     }
     .tree-edge.active-path {
       stroke: var(--accent-indigo);
-      stroke-width: 2.2;
+      stroke-width: 2.6;
     }
     .tree-edge.final-path {
       stroke: var(--accent-green);
-      stroke-width: 3;
+      stroke-width: 3.5;
     }
 
     .tree-node-circle {
@@ -755,7 +829,7 @@
         </svg>
         Depth-First Search (DFS) in AI
       </h1>
-      <p>Interactive State Space &amp; Search Tree Visualizer</p>
+      <p>Interactive State Space &amp; Dynamic Search Tree Visualizer</p>
     </div>
     <button class="theme-toggle-btn" id="themeToggleBtn" aria-label="Toggle Theme">
       <span id="themeIcon">☀️</span> <span id="themeLabel">Light Mode</span>
@@ -777,12 +851,12 @@
       <div class="vocab-item">
         <span class="vocab-badge">Initial State</span>
         <div class="vocab-def">Where the search process begins.</div>
-        <div class="vocab-example">Start cell <code>S = (0, 0)</code></div>
+        <div class="vocab-example" id="vocabInitialState">Start cell <code>S = (0, 0)</code></div>
       </div>
       <div class="vocab-item">
         <span class="vocab-badge">Goal State</span>
         <div class="vocab-def">The target state satisfying the exit condition.</div>
-        <div class="vocab-example">Exit cell <code>G = (5, 5)</code></div>
+        <div class="vocab-example" id="vocabGoalState">Exit cell <code>G = (5, 5)</code></div>
       </div>
       <div class="vocab-item">
         <span class="vocab-badge">Actions</span>
@@ -807,6 +881,18 @@
     
     <!-- LEFT: MAZE & COLOR LEGEND -->
     <div class="maze-column">
+      
+      <!-- INTERACTIVE SOURCE & GOAL POSITION SELECTOR -->
+      <div class="edit-mode-bar">
+        <span style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Click To Set:</span>
+        <button class="mode-btn active source" id="btnSetSource" title="Click any cell in the maze to set Start position">
+          🟢 Start (S)
+        </button>
+        <button class="mode-btn goal" id="btnSetGoal" title="Click any cell in the maze to set Goal position">
+          🎯 Goal (G)
+        </button>
+      </div>
+
       <div class="card maze-wrapper">
         <div id="gridBoard" class="grid-board" role="grid" aria-label="6x6 Maze Grid"></div>
         <div id="cellTooltip" class="cell-tooltip">Cell info</div>
@@ -867,8 +953,8 @@
 
           <div class="speed-control">
             <label for="speedSlider">Speed:</label>
-            <input type="range" id="speedSlider" min="200" max="1400" step="100" value="700">
-            <span id="speedValue">0.7s</span>
+            <input type="range" id="speedSlider" min="150" max="1400" step="50" value="600">
+            <span id="speedValue">0.6s</span>
           </div>
         </div>
 
@@ -928,12 +1014,14 @@
 
         <!-- SEARCH TREE -->
         <div class="tree-panel">
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
             <div class="card-title" style="font-size: 0.95rem; margin-bottom:0;">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"></circle><circle cx="5" cy="19" r="3"></circle><circle cx="19" cy="19" r="3"></circle><line x1="12" y1="8" x2="5" y2="16"></line><line x1="12" y1="8" x2="19" y2="16"></line></svg>
               Search Tree (Unrolled State Space)
             </div>
-            <span style="font-size:0.7rem; color:var(--text-muted);">Draggable/Scrollable</span>
+            <div style="font-size:0.75rem; color:var(--text-muted); display:flex; gap:8px;">
+              <span>↕↔ Drag or Scroll to navigate</span>
+            </div>
           </div>
           <div class="tree-scroll-container" id="treeContainer">
             <svg class="tree-svg" id="treeSvg"></svg>
@@ -974,10 +1062,10 @@
 
       <!-- BFS VS DFS COMPARISON -->
       <div class="comparison-box">
-        <div style="font-weight:700; font-size:0.88rem; color:var(--accent-blue);">DFS vs BFS on this exact maze</div>
+        <div style="font-weight:700; font-size:0.88rem; color:var(--accent-blue);">DFS vs BFS for Current Start &amp; Goal</div>
         <div class="comparison-row">
           <span class="compare-tag">DFS Path Length:</span>
-          <span class="compare-value" id="compDfsPath">17 steps (winding)</span>
+          <span class="compare-value" id="compDfsPath">17 steps</span>
         </div>
         <div class="comparison-row">
           <span class="compare-tag">BFS Shortest Path:</span>
@@ -1003,20 +1091,16 @@
    Grid: 6x6
    0 = Open cell
    1 = Wall
-   Start = (0, 0)
-   Goal = (5, 5)
-
-   Key characteristics:
-   - Dead end corridor 1: (0,2) -> (0,3) (dead end)
-   - Dead end corridor 2: (4,1) -> (5,1) (dead end)
-   - Reconverging spot (two paths to same cell): (3,3) can be reached from
-     top (2,3) and from left (3,2). Demonstrates the critical role of "already visited".
+   Default: Start = (0, 0), Goal = (5, 5)
    ========================================================================== */
 
 const ROWS = 6;
 const COLS = 6;
-const START = { r: 0, c: 0 };
-const GOAL = { r: 5, c: 5 };
+
+// Dynamic Start & Goal states
+let START = { r: 0, c: 0 };
+let GOAL = { r: 5, c: 5 };
+let placementMode = 'source'; // 'source' or 'goal'
 
 const MAZE = [
   [0, 0, 0, 0, 1, 0], // (0,2)->(0,3) dead end
@@ -1024,10 +1108,10 @@ const MAZE = [
   [0, 0, 0, 0, 0, 0], // (2,3) leads down to (3,3)
   [1, 0, 1, 0, 1, 0], // (3,1)->(3,2)->(3,3) reconvergence!
   [0, 0, 1, 0, 0, 0], // (4,1)->(5,1) dead end
-  [1, 0, 1, 1, 1, 0]  // (5,5) is GOAL
+  [1, 0, 1, 1, 1, 0]  // (5,5) is default GOAL
 ];
 
-// Fixed DFS tie-breaking action order as requested
+// Fixed DFS tie-breaking action order
 const ACTIONS = [
   { name: 'Up',    dr: -1, dc:  0 },
   { name: 'Right', dr:  0, dc:  1 },
@@ -1074,7 +1158,6 @@ function computeBfsPathLength() {
 function precomputeDfsSteps() {
   snapshots = [];
   
-  // DFS stack contains nodes: { r, c, parentId, actionFromParent, id }
   let nodeIdCounter = 0;
   const rootNode = {
     id: nodeIdCounter++,
@@ -1082,7 +1165,8 @@ function precomputeDfsSteps() {
     c: START.c,
     parentId: null,
     action: 'Start',
-    depth: 0
+    depth: 0,
+    children: []
   };
 
   const stack = [rootNode];
@@ -1092,26 +1176,36 @@ function precomputeDfsSteps() {
   const treeEdges = [];
 
   // Snapshot 0: Initial State
+  const initialLegal = [];
+  ACTIONS.forEach(act => {
+    const nr = START.r + act.dr;
+    const nc = START.c + act.dc;
+    if (!isCellValid(nr, nc)) {
+      initialLegal.push({ name: act.name, valid: false, reason: 'Wall/Boundary' });
+    } else {
+      initialLegal.push({ name: act.name, valid: true, target: { r: nr, c: nc }, visited: false });
+    }
+  });
+
   snapshots.push({
     current: { r: START.r, c: START.c, id: rootNode.id },
     stack: [{ ...rootNode }],
     explored: new Set(),
     deadEnds: new Set(),
     actionTaken: null,
-    legalActions: [
-      { name: 'Up', valid: false, reason: 'Wall/Boundary' },
-      { name: 'Right', valid: true, target: { r: 0, c: 1 }, visited: false },
-      { name: 'Down', valid: true, target: { r: 1, c: 0 }, visited: false },
-      { name: 'Left', valid: false, reason: 'Wall/Boundary' }
-    ],
-    rationale: 'Initial state S = (0, 0). Push to frontier stack and commence search.',
-    narration: 'Starting at initial state (0, 0). Examining legal moves in fixed priority order: Up, Right, Down, Left.',
+    legalActions: initialLegal,
+    rationale: `Initial state S = ${coordStr(START.r, START.c)}. Push to frontier stack and commence search.`,
+    narration: `Starting at initial state ${coordStr(START.r, START.c)}. Examining legal moves in fixed priority order: Up, Right, Down, Left.`,
     isDeadEnd: false,
-    goalFound: false,
-    finalPath: null,
-    treeNodes: [...treeNodes],
+    goalFound: START.r === GOAL.r && START.c === GOAL.c,
+    finalPath: START.r === GOAL.r && START.c === GOAL.c ? [{ r: START.r, c: START.c }] : null,
+    treeNodes: cloneTreeNodes(treeNodes),
     treeEdges: [...treeEdges]
   });
+
+  if (START.r === GOAL.r && START.c === GOAL.c) {
+    return;
+  }
 
   while (stack.length > 0) {
     const currentNode = stack[stack.length - 1]; // peek top
@@ -1124,7 +1218,6 @@ function precomputeDfsSteps() {
 
     // Check Goal
     if (r === GOAL.r && c === GOAL.c) {
-      // Reconstruct final path from root to goal in the tree
       const pathCells = [];
       let traceId = currentNode.id;
       while (traceId !== null) {
@@ -1141,12 +1234,12 @@ function precomputeDfsSteps() {
         deadEnds: new Set(deadEnds),
         actionTaken: 'Goal reached',
         legalActions: [],
-        rationale: `Goal state G = (5, 5) reached! Goal test returns TRUE. Search terminates successfully.`,
-        narration: `🎉 Goal state G = (5, 5) found! Backtracking complete. Final solution path contains ${pathCells.length} states.`,
+        rationale: `Goal state G = ${coordStr(GOAL.r, GOAL.c)} reached! Goal test returns TRUE. Search terminates successfully.`,
+        narration: `🎉 Goal state G = ${coordStr(GOAL.r, GOAL.c)} found! Backtracking complete. Final solution path contains ${pathCells.length} states.`,
         isDeadEnd: false,
         goalFound: true,
         finalPath: pathCells,
-        treeNodes: [...treeNodes],
+        treeNodes: cloneTreeNodes(treeNodes),
         treeEdges: [...treeEdges]
       });
       break;
@@ -1177,7 +1270,6 @@ function precomputeDfsSteps() {
           reason: 'Already Explored'
         });
       } else {
-        // Legal and unvisited
         const evalItem = {
           name: act.name,
           valid: true,
@@ -1194,16 +1286,17 @@ function precomputeDfsSteps() {
     }
 
     if (chosenAction) {
-      // Create child node and push to stack
       const childNode = {
         id: nodeIdCounter++,
         r: chosenTarget.r,
         c: chosenTarget.c,
         parentId: id,
         action: chosenAction.name,
-        depth: currentNode.depth + 1
+        depth: currentNode.depth + 1,
+        children: []
       };
 
+      currentNode.children.push(childNode.id);
       stack.push(childNode);
       treeNodes.push(childNode);
       treeEdges.push({ from: id, to: childNode.id });
@@ -1225,12 +1318,12 @@ function precomputeDfsSteps() {
         isDeadEnd: false,
         goalFound: false,
         finalPath: null,
-        treeNodes: [...treeNodes],
+        treeNodes: cloneTreeNodes(treeNodes),
         treeEdges: [...treeEdges]
       });
 
     } else {
-      // Dead end reached! Backtrack by popping current top
+      // Dead end reached! Backtrack
       deadEnds.add(currentKey);
       const popped = stack.pop();
 
@@ -1249,11 +1342,10 @@ function precomputeDfsSteps() {
           deadEndCell: { r: popped.r, c: popped.c },
           goalFound: false,
           finalPath: null,
-          treeNodes: [...treeNodes],
+          treeNodes: cloneTreeNodes(treeNodes),
           treeEdges: [...treeEdges]
         });
       } else {
-        // Stack exhausted without goal
         snapshots.push({
           current: null,
           stack: [],
@@ -1261,18 +1353,22 @@ function precomputeDfsSteps() {
           deadEnds: new Set(deadEnds),
           actionTaken: 'Exhausted',
           legalActions: [],
-          rationale: 'Frontier is empty. All reachable states have been explored.',
-          narration: 'Search terminated. No solution found.',
+          rationale: 'Frontier is empty. All reachable states have been explored without reaching the goal.',
+          narration: 'Search terminated. Goal state is unreachable from this Start position.',
           isDeadEnd: true,
           goalFound: false,
           finalPath: null,
-          treeNodes: [...treeNodes],
+          treeNodes: cloneTreeNodes(treeNodes),
           treeEdges: [...treeEdges]
         });
         break;
       }
     }
   }
+}
+
+function cloneTreeNodes(nodes) {
+  return nodes.map(n => ({ ...n, children: [...n.children] }));
 }
 
 /* ==========================================================================
@@ -1292,6 +1388,11 @@ const playIcon = document.getElementById('playIcon');
 const playLabel = document.getElementById('playLabel');
 const speedSlider = document.getElementById('speedSlider');
 const speedValue = document.getElementById('speedValue');
+
+const btnSetSource = document.getElementById('btnSetSource');
+const btnSetGoal = document.getElementById('btnSetGoal');
+const vocabInitialState = document.getElementById('vocabInitialState');
+const vocabGoalState = document.getElementById('vocabGoalState');
 
 const narrationTextEl = document.getElementById('narrationText');
 const stepCounterTagEl = document.getElementById('stepCounterTag');
@@ -1326,23 +1427,11 @@ function initGridDOM() {
         cell.title = `Wall at (${r},${c})`;
       } else {
         cell.classList.add('empty');
-        if (r === START.r && c === START.c) {
-          const badge = document.createElement('span');
-          badge.className = 'cell-badge';
-          badge.textContent = 'S';
-          cell.appendChild(badge);
-        } else if (r === GOAL.r && c === GOAL.c) {
-          const badge = document.createElement('span');
-          badge.className = 'cell-badge';
-          badge.textContent = 'G';
-          cell.appendChild(badge);
-        } else {
-          const coordSub = document.createElement('span');
-          coordSub.className = 'cell-coord-sub';
-          coordSub.textContent = `${r},${c}`;
-          cell.appendChild(coordSub);
-        }
+        updateCellLabels(cell, r, c);
       }
+
+      // Cell click to set Start or Goal
+      cell.addEventListener('click', () => onCellClick(r, c));
 
       // Hover events for cell inspection
       cell.addEventListener('mouseenter', (e) => onCellHover(r, c, e));
@@ -1353,6 +1442,90 @@ function initGridDOM() {
       gridBoardEl.appendChild(cell);
     }
   }
+}
+
+function updateCellLabels(cell, r, c) {
+  cell.innerHTML = '';
+  cell.classList.remove('is-source', 'is-goal');
+
+  if (r === START.r && c === START.c) {
+    cell.classList.add('is-source');
+    const badge = document.createElement('span');
+    badge.className = 'cell-badge';
+    badge.textContent = 'S';
+    badge.style.color = 'var(--accent-green)';
+    cell.appendChild(badge);
+    const sub = document.createElement('span');
+    sub.className = 'cell-coord-sub';
+    sub.textContent = `${r},${c}`;
+    cell.appendChild(sub);
+  } else if (r === GOAL.r && c === GOAL.c) {
+    cell.classList.add('is-goal');
+    const badge = document.createElement('span');
+    badge.className = 'cell-badge';
+    badge.textContent = 'G';
+    badge.style.color = 'var(--accent-amber)';
+    cell.appendChild(badge);
+    const sub = document.createElement('span');
+    sub.className = 'cell-coord-sub';
+    sub.textContent = `${r},${c}`;
+    cell.appendChild(sub);
+  } else {
+    const coordSub = document.createElement('span');
+    coordSub.className = 'cell-coord-sub';
+    coordSub.textContent = `${r},${c}`;
+    cell.appendChild(coordSub);
+  }
+}
+
+function onCellClick(r, c) {
+  if (MAZE[r][c] === 1) return; // Cannot place on wall
+
+  stopAutoPlay();
+
+  if (placementMode === 'source') {
+    if (r === GOAL.r && c === GOAL.c) {
+      // Swapping: if setting source on goal, move goal to old source
+      GOAL = { r: START.r, c: START.c };
+    }
+    START = { r, c };
+  } else {
+    if (r === START.r && c === START.c) {
+      // Swapping: if setting goal on source, move source to old goal
+      START = { r: GOAL.r, c: GOAL.c };
+    }
+    GOAL = { r, c };
+  }
+
+  // Update vocabulary definitions
+  vocabInitialState.innerHTML = `Start cell <code>S = ${coordStr(START.r, START.c)}</code>`;
+  vocabGoalState.innerHTML = `Exit cell <code>G = ${coordStr(GOAL.r, GOAL.c)}</code>`;
+
+  // Re-render labels on all cells
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      if (MAZE[row][col] === 0) {
+        const cEl = document.getElementById(`cell-${row}-${col}`);
+        if (cEl) updateCellLabels(cEl, row, col);
+      }
+    }
+  }
+
+  // Recompute simulation
+  recalculateSimulation();
+}
+
+function recalculateSimulation() {
+  bfsShortestCount = computeBfsPathLength();
+  precomputeDfsSteps();
+
+  const lastSnap = snapshots[snapshots.length - 1];
+  const dfsPathLen = lastSnap.finalPath ? lastSnap.finalPath.length : 0;
+  compDfsPathEl.textContent = dfsPathLen > 0 ? `${dfsPathLen} steps` : 'Unreachable';
+  compBfsPathEl.textContent = bfsShortestCount > 0 ? `${bfsShortestCount} steps (optimal)` : 'Unreachable';
+
+  currentStepIdx = 0;
+  renderSnapshot(0);
 }
 
 function onCellHover(r, c, e) {
@@ -1367,7 +1540,8 @@ function onCellHover(r, c, e) {
         validMoves.push(a.name);
       }
     });
-    cellTooltipEl.innerHTML = `<strong>State (${r}, ${c})</strong><br>Legal actions: ${validMoves.length > 0 ? validMoves.join(', ') : 'None'}`;
+    const role = (r === START.r && c === START.c) ? ' [START]' : (r === GOAL.r && c === GOAL.c) ? ' [GOAL]' : '';
+    cellTooltipEl.innerHTML = `<strong>State (${r}, ${c})${role}</strong><br>Click to set as <em>${placementMode === 'source' ? 'Start' : 'Goal'}</em><br>Legal actions: ${validMoves.length > 0 ? validMoves.join(', ') : 'None'}`;
   }
   cellTooltipEl.style.display = 'block';
 }
@@ -1385,6 +1559,7 @@ function renderSnapshot(idx) {
       if (MAZE[r][c] === 1) continue;
       const cell = document.getElementById(`cell-${r}-${c}`);
       cell.className = 'cell empty';
+      updateCellLabels(cell, r, c);
 
       const key = `${r},${c}`;
       if (snap.explored.has(key)) {
@@ -1406,7 +1581,7 @@ function renderSnapshot(idx) {
         cell.classList.add('current');
       }
 
-      // Goal
+      // Goal Found
       if (snap.goalFound && r === GOAL.r && c === GOAL.c) {
         cell.classList.add('goal-found');
       }
@@ -1483,73 +1658,108 @@ function renderSnapshot(idx) {
 }
 
 /* ==========================================================================
-   SEARCH TREE RENDERER (SVG)
-   Dynamically unrolls graph exploration into a tree
+   DYNAMIC SEARCH TREE RENDERER (SVG)
+   Features hierarchical subtree layout so branches never overlap or get clipped
    ========================================================================== */
 function renderSearchTree(snap) {
   treeSvgEl.innerHTML = '';
   if (!snap.treeNodes || snap.treeNodes.length === 0) return;
 
-  // Compute node depths and horizontal spacing
-  const depthGroups = {};
-  snap.treeNodes.forEach(node => {
-    if (!depthGroups[node.depth]) depthGroups[node.depth] = [];
-    depthGroups[node.depth].push(node);
-  });
+  const nodeMap = new Map();
+  snap.treeNodes.forEach(n => nodeMap.set(n.id, n));
 
-  const maxDepth = Math.max(...Object.keys(depthGroups).map(Number));
-  const levelHeight = 44;
-  const minWidth = Math.max(500, (maxDepth + 1) * 75);
-  const minHeight = 240;
+  const root = snap.treeNodes[0];
 
-  treeSvgEl.setAttribute('width', minWidth);
-  treeSvgEl.setAttribute('height', Math.max(minHeight, (maxDepth + 1) * levelHeight + 40));
-
-  const nodePositions = new Map();
-
-  // Lay out tree horizontally: X increases with Depth, Y spreads across siblings
-  const levels = Object.keys(depthGroups).map(Number).sort((a,b)=>a-b);
-  levels.forEach(d => {
-    const nodes = depthGroups[d];
-    const x = 40 + d * 64;
-    const count = nodes.length;
-    const totalSpan = 180;
-    const stepY = count > 1 ? totalSpan / (count - 1) : 0;
-    const startY = 110 - (count - 1) * (stepY / 2);
-
-    nodes.forEach((n, idx) => {
-      const y = count === 1 ? 110 : startY + idx * stepY;
-      nodePositions.set(n.id, { x, y });
+  // 1. Calculate subtree leaf weight (breadth required)
+  function calcLeafWeights(node) {
+    if (!node.children || node.children.length === 0) {
+      node.weight = 1;
+      return 1;
+    }
+    let sum = 0;
+    node.children.forEach(cid => {
+      const child = nodeMap.get(cid);
+      if (child) sum += calcLeafWeights(child);
     });
+    node.weight = Math.max(1, sum);
+    return node.weight;
+  }
+  calcLeafWeights(root);
+
+  // 2. Assign (X, Y) positions
+  const nodePositions = new Map();
+  const X_STEP = 75; // horizontal distance per depth
+  const Y_LEAF_SPAN = 38; // vertical space per leaf
+  let currentLeafY = 40;
+
+  function layoutNode(node) {
+    const x = 50 + node.depth * X_STEP;
+
+    if (!node.children || node.children.length === 0) {
+      const y = currentLeafY;
+      currentLeafY += Y_LEAF_SPAN;
+      nodePositions.set(node.id, { x, y });
+      return y;
+    }
+
+    const childYPositions = [];
+    node.children.forEach(cid => {
+      const child = nodeMap.get(cid);
+      if (child) {
+        childYPositions.push(layoutNode(child));
+      }
+    });
+
+    const minY = Math.min(...childYPositions);
+    const maxY = Math.max(...childYPositions);
+    const y = (minY + maxY) / 2;
+    nodePositions.set(node.id, { x, y });
+    return y;
+  }
+
+  layoutNode(root);
+
+  // Compute SVG canvas dimensions dynamically
+  let maxX = 500;
+  let maxY = 340;
+  nodePositions.forEach(pos => {
+    if (pos.x + 80 > maxX) maxX = pos.x + 80;
+    if (pos.y + 60 > maxY) maxY = pos.y + 60;
   });
 
-  // Draw Edges
+  treeSvgEl.setAttribute('width', maxX);
+  treeSvgEl.setAttribute('height', maxY);
+
+  // Draw Tree Edges
   snap.treeEdges.forEach(edge => {
     const fromPos = nodePositions.get(edge.from);
     const toPos = nodePositions.get(edge.to);
     if (!fromPos || !toPos) return;
 
-    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-    line.setAttribute('x1', fromPos.x);
-    line.setAttribute('y1', fromPos.y);
-    line.setAttribute('x2', toPos.x);
-    line.setAttribute('y2', toPos.y);
-    line.setAttribute('class', 'tree-edge');
+    // Use smooth cubic bezier curve for tree edges
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    const midX = (fromPos.x + toPos.x) / 2;
+    const d = `M ${fromPos.x} ${fromPos.y} C ${midX} ${fromPos.y}, ${midX} ${toPos.y}, ${toPos.x} ${toPos.y}`;
+    path.setAttribute('d', d);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('class', 'tree-edge');
 
-    // Check if on final path
+    // Check if edge is on final solution path
     if (snap.finalPath) {
-      const fromNode = snap.treeNodes.find(n => n.id === edge.from);
-      const toNode = snap.treeNodes.find(n => n.id === edge.to);
+      const fromNode = nodeMap.get(edge.from);
+      const toNode = nodeMap.get(edge.to);
       const isFromInPath = snap.finalPath.some(p => p.r === fromNode.r && p.c === fromNode.c);
       const isToInPath = snap.finalPath.some(p => p.r === toNode.r && p.c === toNode.c);
       if (isFromInPath && isToInPath) {
-        line.classList.add('final-path');
+        path.classList.add('final-path');
       }
     }
-    treeSvgEl.appendChild(line);
+    treeSvgEl.appendChild(path);
   });
 
-  // Draw Nodes
+  // Draw Tree Nodes
+  let activeNodePos = null;
+
   snap.treeNodes.forEach(n => {
     const pos = nodePositions.get(n.id);
     if (!pos) return;
@@ -1558,7 +1768,7 @@ function renderSearchTree(snap) {
     const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
     circle.setAttribute('cx', pos.x);
     circle.setAttribute('cy', pos.y);
-    circle.setAttribute('r', '13');
+    circle.setAttribute('r', '13.5');
     circle.setAttribute('class', 'tree-node-circle');
 
     const key = `${n.r},${n.c}`;
@@ -1579,6 +1789,7 @@ function renderSearchTree(snap) {
       fillColor = 'var(--cell-current)';
       strokeColor = '#b45309';
       textColor = '#78350f';
+      activeNodePos = pos;
     } else if (isDead) {
       fillColor = 'var(--cell-deadend)';
       strokeColor = '#881337';
@@ -1591,7 +1802,7 @@ function renderSearchTree(snap) {
 
     circle.setAttribute('fill', fillColor);
     circle.setAttribute('stroke', strokeColor);
-    circle.setAttribute('stroke-width', isCurrent ? '2.5' : '1.5');
+    circle.setAttribute('stroke-width', isCurrent ? '2.8' : '1.8');
 
     const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
     text.setAttribute('x', pos.x);
@@ -1603,14 +1814,44 @@ function renderSearchTree(snap) {
     g.appendChild(circle);
     g.appendChild(text);
     treeSvgEl.appendChild(g);
-
-    // Auto scroll tree container to follow current node
-    if (isCurrent) {
-      const scrollLeft = Math.max(0, pos.x - treeContainerEl.clientWidth / 2);
-      treeContainerEl.scrollTo({ left: scrollLeft, behavior: 'smooth' });
-    }
   });
+
+  // Smooth scroll tree container to center current active node
+  if (activeNodePos) {
+    const scrollTargetX = Math.max(0, activeNodePos.x - treeContainerEl.clientWidth / 2);
+    const scrollTargetY = Math.max(0, activeNodePos.y - treeContainerEl.clientHeight / 2);
+    treeContainerEl.scrollTo({ left: scrollTargetX, top: scrollTargetY, behavior: 'smooth' });
+  }
 }
+
+/* ==========================================================================
+   DRAGGABLE TREE CONTAINER NAVIGATION
+   ========================================================================== */
+let isDraggingTree = false;
+let startX, startY, scrollLeftInit, scrollTopInit;
+
+treeContainerEl.addEventListener('mousedown', (e) => {
+  isDraggingTree = true;
+  startX = e.pageX - treeContainerEl.offsetLeft;
+  startY = e.pageY - treeContainerEl.offsetTop;
+  scrollLeftInit = treeContainerEl.scrollLeft;
+  scrollTopInit = treeContainerEl.scrollTop;
+});
+
+window.addEventListener('mouseup', () => {
+  isDraggingTree = false;
+});
+
+treeContainerEl.addEventListener('mousemove', (e) => {
+  if (!isDraggingTree) return;
+  e.preventDefault();
+  const x = e.pageX - treeContainerEl.offsetLeft;
+  const y = e.pageY - treeContainerEl.offsetTop;
+  const walkX = (x - startX) * 1.4;
+  const walkY = (y - startY) * 1.4;
+  treeContainerEl.scrollLeft = scrollLeftInit - walkX;
+  treeContainerEl.scrollTop = scrollTopInit - walkY;
+});
 
 /* ==========================================================================
    PLAYER CONTROLS & AUTO-PLAY
@@ -1689,6 +1930,18 @@ btnBack.addEventListener('click', () => {
 btnReset.addEventListener('click', resetSearch);
 btnPlay.addEventListener('click', toggleAutoPlay);
 
+btnSetSource.addEventListener('click', () => {
+  placementMode = 'source';
+  btnSetSource.classList.add('active');
+  btnSetGoal.classList.remove('active');
+});
+
+btnSetGoal.addEventListener('click', () => {
+  placementMode = 'goal';
+  btnSetGoal.classList.add('active');
+  btnSetSource.classList.remove('active');
+});
+
 speedSlider.addEventListener('input', (e) => {
   const val = e.target.value;
   speedValue.textContent = (val / 1000).toFixed(1) + 's';
@@ -1735,15 +1988,7 @@ window.addEventListener('keydown', (e) => {
    ========================================================================== */
 window.addEventListener('DOMContentLoaded', () => {
   initGridDOM();
-  bfsShortestCount = computeBfsPathLength();
-  precomputeDfsSteps();
-
-  const lastSnap = snapshots[snapshots.length - 1];
-  const dfsPathLen = lastSnap.finalPath ? lastSnap.finalPath.length : 0;
-  compDfsPathEl.textContent = `${dfsPathLen} steps (winding exploratory path)`;
-  compBfsPathEl.textContent = `${bfsShortestCount} steps (optimal shortest path)`;
-
-  renderSnapshot(0);
+  recalculateSimulation();
 });
 </script>
 </body>
